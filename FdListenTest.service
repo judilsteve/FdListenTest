@@ -1,0 +1,8 @@
+[Unit]
+Description=FdListenTest
+
+[Service]
+Restart=on-failure
+Type=notify
+
+ExecStart=/home/james/code/FdListenTest/bin/Debug/net6.0/linux-x64/publish/FdListenTest

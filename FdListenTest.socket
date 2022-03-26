@@ -1,0 +1,10 @@
+[Unit]
+Description=FdListenTest
+After=network-online.target
+Wants=network-online.target
+
+[Socket]
+ListenStream=4242
+
+[Install]
+WantedBy=default.target
