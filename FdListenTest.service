@@ -2,7 +2,25 @@
 Description=FdListenTest
 
 [Service]
-Restart=on-failure
+# Kestrel doesn't seem to be able to notify systemd
+# that it has started when it is running containerised.
+# It gets stuck in the "activating" state and systemd
+# restarts the container every 90 seconds as a result
+# because it times out waiting for READY=1 on the socket.
 Type=notify
+NotifyAccess=all
 
-ExecStart=/home/james/code/FdListenTest/bin/Debug/net6.0/linux-x64/publish/FdListenTest
+Restart=on-failure
+
+# Another issue: Logs don't show up under `journalctl --user -u FdListenTest`.
+# They can only be viewed by running `journalctl --user CONTAINER_NAME=fd-listen-test`.
+# Have tried various combinations of `SyslogIdentifier=%N`, `Environment=PODMAN_SYSTEMD_UNIT=%n`,
+# and `--log-driver=journald` in the ExecStart args, but nothing appears to have worked
+
+ExecStart=/usr/bin/podman run --rm \
+    --sdnotify=container \
+    --name=fd-listen-test \
+    # Without the below line, Kestrel throws Error 13 (Permission denied)
+    # when it attempts to listen the the file descriptor passed by systemd
+    --security-opt label=disable \
+    fd-listen-test
