@@ -1,5 +1,5 @@
 # BUILD SERVER
-FROM mcr.microsoft.com/dotnet/sdk:6.0 AS server-builder
+FROM mcr.microsoft.com/dotnet/sdk:7.0 AS server-builder
 
 WORKDIR /tmp/FdListenTest
 COPY FdListenTest.csproj /tmp/FdListenTest
@@ -8,8 +8,11 @@ COPY Program.cs .
 RUN dotnet restore
 RUN dotnet publish -c Release -o build
 
+# Inject patched dll
+COPY Microsoft.Extensions.Hosting.Systemd_patched.dll build/Microsoft.Extensions.Hosting.Systemd.dll
+
 # BUILD RUNTIME ENVIRONMENT
-FROM mcr.microsoft.com/dotnet/aspnet:6.0
+FROM mcr.microsoft.com/dotnet/aspnet:7.0
 
 RUN apt-get update
 # Last ditch effort to get notify working by runnning

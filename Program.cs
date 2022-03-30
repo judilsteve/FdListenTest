@@ -7,28 +7,19 @@ using Microsoft.Extensions.Logging.Console;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// This doesn't work inside a container, since SystemdHelpers.IsSystemdService()
-// works by checking if the parent process is systemd, but we have a container
-// runtime in the middle.
-// builder.Host.UseSystemd();
+void PrintStatus() {
+    var notifierEnabled = builder.Services.Any(s => s.ServiceType == typeof(ISystemdNotifier));
+    Console.WriteLine($"{nameof(ISystemdNotifier)} is {(notifierEnabled ? "" : "not ")}enabled");
+    var lifetimeEnabled = builder.Services.Any(s => s.ImplementationType == typeof(SystemdLifetime));
+    Console.WriteLine($"{nameof(SystemdLifetime)} is {(lifetimeEnabled ? "" : "not ")}enabled");
+}
 
-// See https://source.dot.net/#Microsoft.Extensions.Hosting.Systemd/SystemdHostBuilderExtensions.cs
-// This still isn't working, needs more debugging
-builder.WebHost.ConfigureServices((hostContext, services) =>
-{
-    services.Configure<ConsoleLoggerOptions>(options =>
-    {
-        options.FormatterName = ConsoleFormatterNames.Systemd;
-    });
+PrintStatus();
 
-    // This resolves to /run/notify/notify.sock
-    Console.WriteLine($"NOTIFY_SOCKET: {Environment.GetEnvironmentVariable("NOTIFY_SOCKET")}");
+Console.WriteLine($"Calling nameof(SystemHostBuilderExtensions.UseSystemd)");
+builder.Host.UseSystemd();
 
-    // See https://source.dot.net/#Microsoft.Extensions.Hosting.Systemd/SystemdNotifier.cs
-    services.AddSingleton<ISystemdNotifier, SystemdNotifier>();
-    // See https://source.dot.net/#Microsoft.Extensions.Hosting.Systemd/SystemdLifetime.cs
-    services.AddSingleton<IHostLifetime, SystemdLifetime>();
-});
+PrintStatus();
 
 builder.WebHost.ConfigureKestrel(ko => {
     ko.UseSystemd();
